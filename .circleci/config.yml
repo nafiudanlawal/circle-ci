@@ -49,7 +49,7 @@ workflows:
       - heroku/deploy-via-git:  
           requires:
             - build_backend
-			- build_frontend
+            - build_frontend
           filters:
             branches:
               only: master
