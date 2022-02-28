@@ -1,31 +1,55 @@
 version: 2.1
 
 orbs:
-  browser-tools: circleci/browser-tools@1.1.0
+  node: circleci/node@1.1.6
+  heroku: circleci/heroku@1.2.6
+
 jobs:
-  build:
-    # pre-built images: https://circleci.com/docs/2.0/circleci-images/
-    docker:
-      - image: cimg/node:17.2-browsers
+  build_frontend:
+	docker:
+      - image: circleci/node:10.16.0
     steps:
       - checkout
-      - browser-tools/install-browser-tools
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
       - run:
-          name: The First Step
-          command: |
-            echo 'Hello World!'
-            echo 'This is the delivery pipeline'
+          name: Install dependencies
+          command: cd frontend; npm install
+
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - ./node_modules
       - run:
-          name: Code Has Arrived
-          command: |
-            ls -al
-            echo '^^^That should look familiar^^^'
-      #- run:
-      #    name: Build and push Docker image to Heroku
-      #    command: |
-      #      set -x
-      #      sudo curl https://cli-assets.heroku.com/install.sh | sh
-      #      HEROKU_API_KEY=${HEROKU_API_KEY} heroku container:login
-      #      HEROKU_API_KEY=${HEROKU_API_KEY} heroku container:push -a circle-ci-tutorial web
-      #      HEROKU_API_KEY=${HEROKU_API_KEY} heroku container:release -a circle-ci-tutorial web
-            
+          name: Run test
+          command:  cd frontend; npm test
+  build_backend:
+    docker:
+      - image: circleci/node:10.16.0
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run:
+          name: Install dependencies
+          command: cd backend; npm install
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - ./node_modules
+      - run:
+          name: Run test
+          command:  cd backend; npm test
+
+workflows:
+  heroku_deploy:
+    jobs:
+      - build_frontend
+      - build_backend
+      - heroku/deploy-via-git:  
+          requires:
+            - build_backend
+			- build_frontend
+          filters:
+            branches:
+              only: master
