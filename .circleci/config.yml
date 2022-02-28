@@ -40,21 +40,17 @@ jobs:
       - run:
           name: Run test
           command:  cd backend; npm test
-  deploy_heroku:
-    steps:
-      - run:
-        name: Build and push Docker image to Heroku
-        command: |
-          set -x
-          sudo curl https://cli-assets.heroku.com/install.sh | sh
-          HEROKU_API_KEY=${HEROKU_API_KEY} heroku container:login
-          HEROKU_API_KEY=${HEROKU_API_KEY} heroku container:push -a circle-ci-tutorial web
-          HEROKU_API_KEY=${HEROKU_API_KEY} heroku container:release -a circle-ci-tutorial web
 
 workflows:
   heroku_deploy:
     jobs:
       - build_frontend
       - build_backend
-      - deploy_heroku
+      - heroku/deploy-via-git:  
+          requires:
+            - build_backend
+            - build_frontend
+          filters:
+            branches:
+              only: master
 
