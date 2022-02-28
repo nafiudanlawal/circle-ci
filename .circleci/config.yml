@@ -6,7 +6,7 @@ orbs:
 
 jobs:
   build_frontend:
-	docker:
+    docker:
       - image: circleci/node:10.16.0
     steps:
       - checkout
